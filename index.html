@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Gerenciador de Séries e Filmes</title>
+  <meta name="theme-color" content="#7c3aed">
+  <meta name="description" content="Acompanhe suas séries e filmes favoritos">
+  <meta name="apple-mobile-web-app-title" content="Séries">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>🎬 Séries e Filmes</h1>
+  <p>Acompanhe o que você assiste</p>
+  <div id="syncStatusIndicator" class="sync-status-indicator sync-status-idle">
+    <span class="sync-icon">○</span><span class="sync-text">Desconectado</span>
+  </div>
+</header>
+
+<main>
+  <nav>
+    <button class="tab active" data-tab="assistindo">Assistindo</button>
+    <button class="tab" data-tab="emdia">Em Dia</button>
+    <button class="tab" data-tab="finalizados">Finalizados</button>
+    <button class="tab" data-tab="buscar">Buscar</button>
+    <button class="tab" data-tab="meusfilmes">Filmes</button>
+    <button class="tab" data-tab="novidades">Novidades</button>
+    <button class="tab" data-tab="sincronizacao">Sync</button>
+  </nav>
+
+  <!-- Assistindo -->
+  <section id="assistindo" class="page active">
+    <div class="cards">
+      <div class="card"><span>Assistindo</span><strong id="totalAssistindo">0</strong></div>
+      <div class="card"><span>Episódios pendentes</span><strong id="totalPendentes">0</strong></div>
+    </div>
+    <div id="assistindoList"></div>
+  </section>
+
+  <!-- Em Dia -->
+  <section id="emdia" class="page">
+    <div class="cards">
+      <div class="card"><span>Em dia</span><strong id="totalEmDia">0</strong></div>
+    </div>
+    <p class="section-desc">Séries que você está acompanhando e não tem episódios pendentes.</p>
+    <div id="emDiaList"></div>
+  </section>
+
+  <!-- Finalizados -->
+  <section id="finalizados" class="page">
+    <div class="cards">
+      <div class="card"><span>Finalizados</span><strong id="totalFinalizados">0</strong></div>
+    </div>
+    <div id="finalizadosList"></div>
+  </section>
+
+  <!-- Buscar -->
+  <section id="buscar" class="page">
+    <div class="panel">
+      <h2>Buscar Séries e Filmes</h2>
+      <div class="search-row">
+        <input id="searchInput" type="search" placeholder="Nome da série ou filme...">
+        <button onclick="searchTMDB()">Buscar</button>
+      </div>
+      <div class="search-type">
+        <label><input type="radio" name="searchType" value="tv" checked> Séries</label>
+        <label><input type="radio" name="searchType" value="movie"> Filmes</label>
+      </div>
+    </div>
+    <div id="searchResults"></div>
+  </section>
+
+  <!-- Meus Filmes -->
+  <section id="meusfilmes" class="page">
+    <div class="cards">
+      <div class="card"><span>Para assistir</span><strong id="totalFilmesPendentes">0</strong></div>
+      <div class="card"><span>Assistidos</span><strong id="totalFilmesAssistidos">0</strong></div>
+    </div>
+    <div id="filmesList"></div>
+  </section>
+
+  <!-- Novidades -->
+  <section id="novidades" class="page">
+    <div class="panel">
+      <h2>Novos Episódios</h2>
+      <p>Episódios que saíram recentemente nas séries que você acompanha.</p>
+      <button onclick="checkNewEpisodes()">Verificar novidades</button>
+    </div>
+    <div id="novidadesList"></div>
+  </section>
+
+  <!-- Sincronização -->
+  <section id="sincronizacao" class="page">
+    <div class="panel">
+      <h2>Sincronização na nuvem</h2>
+      <div id="cloudStatus" class="cloud-status"></div>
+
+      <form id="cloudAuth" onsubmit="submitCloudLogin(event)">
+        <label>E-mail <input id="cloudLoginEmail" type="email" autocomplete="email" required></label>
+        <label>Senha <input id="cloudLoginPassword" type="password" autocomplete="current-password" minlength="6" required></label>
+        <div class="actions">
+          <button>Entrar</button>
+          <button type="button" class="secondary" onclick="createCloudAccount()">Criar conta</button>
+        </div>
+      </form>
+
+      <div id="cloudConnected" hidden>
+        <div class="cloud-account">
+          <span>Conta</span>
+          <strong id="cloudEmail"></strong>
+          <span>Último backup na nuvem</span>
+          <strong id="cloudLastSync">Consultando...</strong>
+        </div>
+
+        <div class="actions cloud-actions">
+          <button type="button" onclick="uploadCloudData()">↑ Enviar para a nuvem</button>
+          <button type="button" onclick="downloadCloudData()">↓ Baixar da nuvem</button>
+          <button type="button" class="secondary" onclick="restorePreCloudBackup()">Restaurar cópia local anterior</button>
+          <button type="button" class="secondary" onclick="cloudSignOut()">Sair da conta</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Modal de detalhes da série -->
+<div id="seriesModal" class="modal-bg">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="seriesModalTitle"></h2>
+      <button class="secondary" onclick="closeSeriesModal()">×</button>
+    </div>
+    <div id="seriesModalContent"></div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="sync.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
