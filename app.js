@@ -143,6 +143,7 @@ async function addMovie(tmdbId) {
 
 // ─── Classificação das Séries ──────────────────────────────────────
 function getShowStatus(show) {
+ if (show.abandoned) return 'abandonada';
  const total = show.seasons.reduce((s, sea) => s + sea.episodes.length, 0);
  const watched = show.seasons.reduce((s, sea) => s + sea.episodes.filter(e => e.watched).length, 0);
  if (total === 0) return 'assistindo';
@@ -195,11 +196,17 @@ function renderFinalizados() {
  byId('finalizadosList').innerHTML = shows.length ? shows.map(s => renderShowCard(s, 'finalizado')).join('') : '<div class="empty">Nenhuma série finalizada.</div>';
 }
 
+function renderAbandonadas() {
+ const shows = state.shows.filter(s => getShowStatus(s) === 'abandonada');
+ byId('totalAbandonadas').textContent = shows.length;
+ byId('abandonadasList').innerHTML = shows.length ? shows.map(s => renderShowCard(s, 'abandonada')).join('') : '<div class="empty">Nenhuma série abandonada.</div>';
+}
+
 function renderShowCard(show, statusType) {
  const prog = getShowProgress(show);
  const pending = getPendingEpisodes(show);
  const poster = show.poster ? `${TMDB_IMG}${show.poster}` : '';
- const statusLabels = { assistindo: 'Assistindo', emdia: 'Em dia', finalizado: 'Finalizado' };
+ const statusLabels = { assistindo: 'Assistindo', emdia: 'Em dia', finalizado: 'Finalizado', abandonada: 'Abandonada' };
  return `<div class="show-card" onclick="openShowDetail(${show.tmdbId})">
   ${poster ? `<img src="${poster}" alt="${esc(show.name)}">` : '<div style="width:80px;height:120px;background:#ede9fe;border-radius:10px;display:flex;align-items:center;justify-content:center">📺</div>'}
   <div class="show-card-info">
@@ -270,6 +277,7 @@ function openShowDetail(tmdbId) {
   <button onclick="markAllSeasons(${show.tmdbId},true)">✓ Marcar tudo como assistido</button>
   <button class="secondary" onclick="markAllSeasons(${show.tmdbId},false)">Desmarcar tudo</button>
   <button class="secondary" onclick="updateShowData(${show.tmdbId})">↻ Atualizar dados</button>
+  ${show.abandoned ? '<button onclick="unAbandonShow('+show.tmdbId+')">↩ Retomar série</button>' : '<button class="secondary" style="background:#fef3c7;color:#92400e" onclick="abandonShow('+show.tmdbId+')">Abandonar série</button>'}
   <button class="secondary" style="background:#fee2e2;color:#991b1b" onclick="removeShow(${show.tmdbId})">Remover série</button>
  </div>`;
 
@@ -338,6 +346,21 @@ function markAllSeasons(showId, watched) {
  if (!show) return;
  show.seasons.forEach(sea => sea.episodes.forEach(ep => ep.watched = watched));
  save(); openShowDetail(showId); renderAll();
+}
+
+function abandonShow(tmdbId) {
+ const show = state.shows.find(s => s.tmdbId === tmdbId);
+ if (!show) return;
+ if (!confirm(`Abandonar "${show.name}"?`)) return;
+ show.abandoned = true;
+ save(); openShowDetail(tmdbId); renderAll();
+}
+
+function unAbandonShow(tmdbId) {
+ const show = state.shows.find(s => s.tmdbId === tmdbId);
+ if (!show) return;
+ show.abandoned = false;
+ save(); openShowDetail(tmdbId); renderAll();
 }
 
 // ─── Atualizar dados da série (novos episódios) ────────────────────
@@ -468,6 +491,7 @@ function renderAll() {
  renderAssistindo();
  renderEmDia();
  renderFinalizados();
+ renderAbandonadas();
  renderFilmes();
 }
 
