@@ -363,6 +363,58 @@ function unAbandonShow(tmdbId) {
  save(); openShowDetail(tmdbId); renderAll();
 }
 
+// ─── Atualizar dados da série (silencioso, sem alert) ──────────────
+async function updateShowDataSilent(tmdbId) {
+ const show = state.shows.find(s => s.tmdbId === tmdbId);
+ if (!show) return;
+ try {
+  const data = await tmdbFetch(`/tv/${tmdbId}`);
+  if (!data) return;
+  show.name = data.name;
+  show.poster = data.poster_path || show.poster;
+  show.overview = (data.overview || '').slice(0, 300);
+  show.status = data.status;
+  show.totalSeasons = data.number_of_seasons || show.totalSeasons;
+  show.totalEpisodes = data.number_of_episodes || show.totalEpisodes;
+
+  for (let i = 1; i <= show.totalSeasons; i++) {
+   try {
+    const sData = await tmdbFetch(`/tv/${tmdbId}/season/${i}`);
+    if (!sData || !sData.episodes) continue;
+    const existing = show.seasons.find(s => s.number === i);
+    if (existing) {
+     sData.episodes.forEach(ep => {
+      const existingEp = existing.episodes.find(e => e.number === ep.episode_number);
+      if (!existingEp) {
+       existing.episodes.push({
+        number: ep.episode_number,
+        name: ep.name || `Episódio ${ep.episode_number}`,
+        airDate: ep.air_date || '',
+        watched: false
+       });
+      } else {
+       existingEp.name = ep.name || existingEp.name;
+       existingEp.airDate = ep.air_date || existingEp.airDate;
+      }
+     });
+    } else {
+     show.seasons.push({
+      number: i,
+      name: sData.name || `Temporada ${i}`,
+      episodes: sData.episodes.map(ep => ({
+       number: ep.episode_number,
+       name: ep.name || `Episódio ${ep.episode_number}`,
+       airDate: ep.air_date || '',
+       watched: false
+      }))
+     });
+    }
+   } catch { }
+  }
+  save(); renderAll();
+ } catch (err) { /* silencioso */ }
+}
+
 // ─── Atualizar dados da série (novos episódios) ────────────────────
 async function updateShowData(tmdbId) {
  const show = state.shows.find(s => s.tmdbId === tmdbId);
@@ -444,13 +496,21 @@ async function checkNewEpisodes() {
 
  if (!novidades.length) {
   byId('novidadesList').innerHTML = '<div class="empty">Nenhum episódio novo nos últimos 7 dias para suas séries.</div>';
-  // Tentar atualizar dados das séries ativas
-  if (activeShows.length && tmdbConfigured()) {
+  // Tentar atualizar dados das séries ativas (apenas se não veio de uma re-verificação)
+  if (!checkNewEpisodes._recheck && activeShows.length && tmdbConfigured()) {
    if (confirm('Deseja atualizar os dados das séries para verificar novos episódios?')) {
+    let atualizadas = 0;
     for (const show of activeShows.slice(0, 5)) {
-     await updateShowData(show.tmdbId);
+     await updateShowDataSilent(show.tmdbId);
+     atualizadas++;
     }
-    checkNewEpisodes();
+    if (atualizadas > 0) {
+     alert(`Dados de ${atualizadas} série(s) atualizados.`);
+    }
+    // Re-verificar novidades sem perguntar de novo
+    checkNewEpisodes._recheck = true;
+    await checkNewEpisodes();
+    checkNewEpisodes._recheck = false;
    }
   }
   return;
