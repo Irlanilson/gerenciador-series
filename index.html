@@ -32,6 +32,7 @@
     <button class="tab" data-tab="meusfilmes">Filmes</button>
     <button class="tab" data-tab="novidades">Novidades</button>
     <button class="tab" data-tab="sincronizacao">Sync</button>
+    <button class="tab" data-tab="backup">Backup</button>
   </nav>
 
   <!-- Assistindo -->
@@ -133,6 +134,18 @@
           <button type="button" class="secondary" onclick="restorePreCloudBackup()">Restaurar cópia local anterior</button>
           <button type="button" class="secondary" onclick="cloudSignOut()">Sair da conta</button>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Backup -->
+  <section id="backup" class="page">
+    <div class="panel">
+      <h2>Backup</h2>
+      <p>Exporte ou importe seus dados locais.</p>
+      <div class="actions">
+        <button onclick="exportBackup()">Exportar backup</button>
+        <label class="file">Importar backup<input id="backupInput" type="file" accept="application/json" hidden></label>
       </div>
     </div>
   </section>

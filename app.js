@@ -537,6 +537,32 @@ function requestNotificationPermission() {
  }
 }
 
+// ─── Backup ────────────────────────────────────────────────────────
+function exportBackup() {
+ const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+ const a = document.createElement('a');
+ a.href = URL.createObjectURL(blob);
+ a.download = 'backup-series-filmes.json';
+ a.click();
+}
+
+byId('backupInput').onchange = e => {
+ const file = e.target.files[0];
+ if (!file) return;
+ const r = new FileReader();
+ r.onload = () => {
+  try {
+   const imported = JSON.parse(r.result);
+   if (!imported.shows && !imported.movies) throw new Error('Formato inválido');
+   state = { shows: imported.shows || [], movies: imported.movies || [] };
+   save();
+   renderAll();
+   alert('Backup importado com sucesso.');
+  } catch { alert('Backup inválido.') }
+ };
+ r.readAsText(file);
+};
+
 // ─── Tabs ──────────────────────────────────────────────────────────
 document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
