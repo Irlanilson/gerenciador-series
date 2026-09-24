@@ -63,16 +63,83 @@ function renderSearchResults(results, type) {
   const year = (r.first_air_date || r.release_date || '').slice(0, 4);
   const poster = r.poster_path ? `${TMDB_IMG}${r.poster_path}` : '';
   const added = type === 'tv' ? state.shows.some(s => s.tmdbId === r.id) : state.movies.some(m => m.tmdbId === r.id);
-  return `<div class="show-card" onclick="${type === 'tv' ? `addShow(${r.id})` : `addMovie(${r.id})`}">
+  return `<div class="show-card" onclick="openSearchDetail(${r.id},'${type}')">
    ${poster ? `<img src="${poster}" alt="${esc(title)}">` : '<div style="width:80px;height:120px;background:#e8eef8;border-radius:10px;display:flex;align-items:center;justify-content:center">🎬</div>'}
    <div class="show-card-info">
     <h3>${esc(title)}</h3>
     <p>${year ? year + ' • ' : ''}${type === 'tv' ? 'Série' : 'Filme'}</p>
     <p>${esc((r.overview || '').slice(0, 100))}${(r.overview || '').length > 100 ? '...' : ''}</p>
-    ${added ? '<span class="status-tag status-assistindo">Já adicionado</span>' : '<span class="status-tag status-pendente">Toque para adicionar</span>'}
+    ${added ? '<span class="status-tag status-assistindo">Já adicionado</span>' : '<span class="status-tag status-pendente">Toque para ver detalhes</span>'}
    </div>
   </div>`;
  }).join('');
+}
+
+// ─── Modal de Detalhes da Busca ────────────────────────────────────
+async function openSearchDetail(tmdbId, type) {
+ byId('searchModalTitle').textContent = 'Carregando...';
+ byId('searchModalContent').innerHTML = '<div class="empty">Carregando detalhes...</div>';
+ byId('searchModal').classList.add('show');
+ try {
+  const data = await tmdbFetch(`/${type}/${tmdbId}`);
+  if (!data) { closeSearchModal(); return }
+
+  const title = data.name || data.title || 'Sem título';
+  const year = (data.first_air_date || data.release_date || '').slice(0, 4);
+  const poster = data.poster_path ? `${TMDB_IMG}${data.poster_path}` : '';
+  const rating = data.vote_average ? data.vote_average.toFixed(1) : null;
+  const genres = (data.genres || []).map(g => g.name).join(', ');
+  const added = type === 'tv'
+   ? state.shows.some(s => s.tmdbId === data.id)
+   : state.movies.some(m => m.tmdbId === data.id);
+
+  let meta = [];
+  if (year) meta.push(year);
+  meta.push(type === 'tv' ? 'Série' : 'Filme');
+  if (type === 'tv') {
+   if (data.number_of_seasons) meta.push(`${data.number_of_seasons} temporada(s)`);
+   if (data.number_of_episodes) meta.push(`${data.number_of_episodes} episódios`);
+  } else if (data.runtime) {
+   meta.push(`${data.runtime} min`);
+  }
+  if (rating) meta.push(`⭐ ${rating}`);
+
+  byId('searchModalTitle').textContent = title;
+
+  let html = '';
+  html += '<div class="search-detail">';
+  if (poster) {
+   html += `<img class="search-detail-poster" src="${poster}" alt="${esc(title)}">`;
+  }
+  html += '<div class="search-detail-info">';
+  html += `<p class="show-meta">${esc(meta.join(' • '))}</p>`;
+  if (genres) html += `<p class="show-meta">${esc(genres)}</p>`;
+  html += `<p class="show-overview">${esc(data.overview || 'Sinopse não disponível.')}</p>`;
+  html += '</div>';
+  html += '</div>';
+
+  html += '<div class="actions" style="margin-top:14px">';
+  if (added) {
+   html += '<span class="status-tag status-assistindo">Já está na sua lista</span>';
+  } else {
+   html += `<button onclick="addFromSearch(${data.id},'${type}')">+ Adicionar à minha lista</button>`;
+  }
+  html += '<button class="secondary" onclick="closeSearchModal()">Fechar</button>';
+  html += '</div>';
+
+  byId('searchModalContent').innerHTML = html;
+ } catch (err) {
+  byId('searchModalContent').innerHTML = `<div class="empty">Erro ao carregar detalhes: ${esc(err.message)}</div>`;
+ }
+}
+
+function closeSearchModal() { byId('searchModal').classList.remove('show') }
+
+async function addFromSearch(tmdbId, type) {
+ closeSearchModal();
+ if (type === 'tv') { await addShow(tmdbId) } else { await addMovie(tmdbId) }
+ // Atualiza a lista de resultados para refletir "Já adicionado"
+ searchTMDB();
 }
 
 // ─── Adicionar Série ───────────────────────────────────────────────
