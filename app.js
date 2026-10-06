@@ -225,11 +225,12 @@ function getShowStatus(show) {
  if (watched === total) {
   return (show.status === 'Ended' || show.status === 'Canceled') ? 'finalizado' : 'emdia';
  }
- // Em dia quando todos os episódios já LANÇADOS foram assistidos,
+ // "Em dia" quando não há nenhum episódio já LANÇADO pendente de assistir,
  // desconsiderando episódios futuros ou ainda sem data de lançamento.
- const availableEps = show.seasons.reduce((s, sea) => s + sea.episodes.filter(e => episodeReleased(e, today)).length, 0);
- const watchedAvailable = show.seasons.reduce((s, sea) => s + sea.episodes.filter(e => e.watched && episodeReleased(e, today)).length, 0);
- if (availableEps > 0 && watchedAvailable === availableEps) return 'emdia';
+ const releasedUnwatched = show.seasons.reduce(
+  (s, sea) => s + sea.episodes.filter(e => !e.watched && episodeReleased(e, today)).length, 0
+ );
+ if (releasedUnwatched === 0) return 'emdia';
  return 'assistindo';
 }
 
