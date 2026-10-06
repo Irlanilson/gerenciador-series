@@ -142,18 +142,26 @@ async function addMovie(tmdbId) {
 }
 
 // ─── Classificação das Séries ──────────────────────────────────────
+// Um episódio só é considerado "já lançado" quando possui uma data de
+// exibição válida e igual/anterior a hoje. Episódios sem data (air_date
+// vazio na TMDB) ou com data futura ainda NÃO foram lançados.
+function episodeReleased(ep, today) {
+ return !!ep.airDate && ep.airDate <= today;
+}
+
 function getShowStatus(show) {
  if (show.abandoned) return 'abandonada';
+ const today = new Date().toISOString().slice(0, 10);
  const total = show.seasons.reduce((s, sea) => s + sea.episodes.length, 0);
  const watched = show.seasons.reduce((s, sea) => s + sea.episodes.filter(e => e.watched).length, 0);
  if (total === 0) return 'assistindo';
  if (watched === total) {
   return (show.status === 'Ended' || show.status === 'Canceled') ? 'finalizado' : 'emdia';
  }
- // Se assistiu todos os episódios disponíveis até agora
- const today = new Date().toISOString().slice(0, 10);
- const availableEps = show.seasons.reduce((s, sea) => s + sea.episodes.filter(e => !e.airDate || e.airDate <= today).length, 0);
- const watchedAvailable = show.seasons.reduce((s, sea) => s + sea.episodes.filter(e => e.watched && (!e.airDate || e.airDate <= today)).length, 0);
+ // Em dia quando todos os episódios já LANÇADOS foram assistidos,
+ // desconsiderando episódios futuros ou ainda sem data de lançamento.
+ const availableEps = show.seasons.reduce((s, sea) => s + sea.episodes.filter(e => episodeReleased(e, today)).length, 0);
+ const watchedAvailable = show.seasons.reduce((s, sea) => s + sea.episodes.filter(e => e.watched && episodeReleased(e, today)).length, 0);
  if (availableEps > 0 && watchedAvailable === availableEps) return 'emdia';
  return 'assistindo';
 }
@@ -169,7 +177,8 @@ function getPendingEpisodes(show) {
  let pending = 0;
  show.seasons.forEach(sea => {
   sea.episodes.forEach(ep => {
-   if (!ep.watched && (!ep.airDate || ep.airDate <= today)) pending++;
+   // Pendente = episódio já lançado e ainda não assistido.
+   if (!ep.watched && episodeReleased(ep, today)) pending++;
   });
  });
  return pending;
