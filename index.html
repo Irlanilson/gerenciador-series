@@ -153,12 +153,13 @@
 
 <!-- Modal de detalhes da série -->
 <div id="seriesModal" class="modal-bg">
-  <div class="modal">
+  <div class="modal" id="seriesModalBox">
     <div class="modal-head">
       <h2 id="seriesModalTitle"></h2>
       <button class="secondary" onclick="closeSeriesModal()">×</button>
     </div>
     <div id="seriesModalContent"></div>
+    <button type="button" id="seriesModalToTop" class="modal-to-top" title="Voltar ao topo" aria-label="Voltar ao topo" onclick="scrollSeriesModalTop()">↑</button>
   </div>
 </div>
 

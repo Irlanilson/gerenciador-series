@@ -25,8 +25,12 @@ input,select{width:100%;border:1px solid #d7deea;border-radius:12px;padding:12px
 
 .modal-bg{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:16px;z-index:20}
 .modal-bg.show{display:flex}
-.modal{background:white;border-radius:18px;padding:16px;max-width:720px;width:100%;max-height:85vh;overflow:auto}
-.modal-head{display:flex;justify-content:space-between;align-items:center}
+.modal{position:relative;background:white;border-radius:18px;padding:16px;max-width:720px;width:100%;max-height:85vh;overflow:auto}
+/* Cabeçalho fixo: o botão de fechar (×) fica sempre visível ao rolar */
+.modal-head{position:sticky;top:-16px;z-index:2;display:flex;justify-content:space-between;align-items:center;background:white;margin:-16px -16px 0;padding:16px;border-radius:18px 18px 0 0}
+/* Botão flutuante para voltar ao topo do modal */
+.modal-to-top{position:sticky;bottom:12px;float:right;margin-top:12px;width:44px;height:44px;border-radius:50%;border:none;background:#7c3aed;color:white;font-size:20px;line-height:1;cursor:pointer;box-shadow:0 4px 12px #0003;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-to-top.show{opacity:1;pointer-events:auto}
 
 .search-row{display:flex;gap:8px;margin-top:8px}
 .search-row input{flex:1}

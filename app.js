@@ -342,7 +342,7 @@ function removeMovie(tmdbId) {
 }
 
 // ─── Modal de Detalhes da Série ────────────────────────────────────
-function openShowDetail(tmdbId) {
+function openShowDetail(tmdbId, preserveScroll = false) {
  const show = state.shows.find(s => s.tmdbId === tmdbId);
  if (!show) return;
  byId('seriesModalTitle').textContent = show.name;
@@ -384,6 +384,27 @@ function openShowDetail(tmdbId) {
 
  byId('seriesModalContent').innerHTML = html;
  byId('seriesModal').classList.add('show');
+ setupSeriesModalScroll(preserveScroll);
+}
+
+// Botão "voltar ao topo" do modal de detalhes da série.
+function setupSeriesModalScroll(preserveScroll = false) {
+ const box = byId('seriesModalBox');
+ const btn = byId('seriesModalToTop');
+ if (!box || !btn) return;
+ // Em re-render (marcar episódio etc.) mantém a posição de rolagem;
+ // só volta ao topo na abertura inicial do modal.
+ if (!preserveScroll) box.scrollTop = 0;
+ btn.classList.toggle('show', box.scrollTop > 300);
+ // Evita acumular listeners a cada abertura/re-render do modal.
+ box.onscroll = () => {
+  btn.classList.toggle('show', box.scrollTop > 300);
+ };
+}
+
+function scrollSeriesModalTop() {
+ const box = byId('seriesModalBox');
+ if (box) box.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function closeSeriesModal() { byId('seriesModal').classList.remove('show') }
@@ -400,7 +421,7 @@ function toggleEpisode(showId, seasonNum, epNum) {
  const ep = season.episodes.find(e => e.number === epNum);
  if (!ep) return;
  ep.watched = !ep.watched;
- save(); openShowDetail(showId); renderAll();
+ save(); openShowDetail(showId, true); renderAll();
 }
 
 function markSeason(showId, seasonNum, watched) {
@@ -409,7 +430,7 @@ function markSeason(showId, seasonNum, watched) {
  const season = show.seasons.find(s => s.number === seasonNum);
  if (!season) return;
  season.episodes.forEach(ep => ep.watched = watched);
- save(); openShowDetail(showId); renderAll();
+ save(); openShowDetail(showId, true); renderAll();
 }
 
 function removeShow(tmdbId) {
@@ -422,7 +443,7 @@ function markAllSeasons(showId, watched) {
  const show = state.shows.find(s => s.tmdbId === showId);
  if (!show) return;
  show.seasons.forEach(sea => sea.episodes.forEach(ep => ep.watched = watched));
- save(); openShowDetail(showId); renderAll();
+ save(); openShowDetail(showId, true); renderAll();
 }
 
 function abandonShow(tmdbId) {
@@ -430,14 +451,14 @@ function abandonShow(tmdbId) {
  if (!show) return;
  if (!confirm(`Abandonar "${show.name}"?`)) return;
  show.abandoned = true;
- save(); openShowDetail(tmdbId); renderAll();
+ save(); openShowDetail(tmdbId, true); renderAll();
 }
 
 function unAbandonShow(tmdbId) {
  const show = state.shows.find(s => s.tmdbId === tmdbId);
  if (!show) return;
  show.abandoned = false;
- save(); openShowDetail(tmdbId); renderAll();
+ save(); openShowDetail(tmdbId, true); renderAll();
 }
 
 // ─── Atualizar dados da série (silencioso, sem alert) ──────────────
@@ -542,7 +563,7 @@ async function updateShowData(tmdbId) {
     }
    } catch { }
   }
-  save(); openShowDetail(tmdbId); renderAll();
+  save(); openShowDetail(tmdbId, true); renderAll();
   alert('Dados atualizados.');
  } catch (err) { alert('Erro ao atualizar: ' + err.message) }
 }
